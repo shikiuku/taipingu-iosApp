@@ -2,14 +2,15 @@ import { COLORS } from '@/constants/theme';
 import { WORD_LIST_3000, Word } from '@/constants/words';
 import { useGameStore } from '@/store/useGameStore';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { useTypingLogic } from './hooks/useTypingLogic';
 
 const GameScreen = () => {
     const router = useRouter();
     const { score, timeRemaining, currentCourse, addScore, decrementTime, status } = useGameStore();
     const [targetWord, setTargetWord] = useState<Word>(WORD_LIST_3000[0]);
+    const inputRef = useRef<TextInput>(null);
 
     const onComplete = () => {
         addScore(100);
@@ -35,49 +36,73 @@ const GameScreen = () => {
         }
     }, [status]);
 
+    // 常にフォーカスを維持
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            inputRef.current?.focus();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handlePressScreen = () => {
+        inputRef.current?.focus();
+    };
+
     return (
-        <View style={styles.container}>
-            {/* ヘッダー情報 */}
-            <View style={styles.header}>
-                <Text style={styles.timer}>残り {String(timeRemaining).padStart(3, '0')} 秒</Text>
-                <Text style={styles.score}>獲得金額: {score.toLocaleString()} 円</Text>
-            </View>
+        <TouchableWithoutFeedback onPress={handlePressScreen}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.container}
+            >
+                {/* ヘッダー情報 */}
+                <View style={styles.header}>
+                    <Text style={styles.timer}>残り {String(timeRemaining).padStart(3, '0')} 秒</Text>
+                    <Text style={styles.score}>獲得金額: {score.toLocaleString()} 円</Text>
+                </View>
 
-            {/* 寿司カウンター演出（プレースホルダー） */}
-            <View style={styles.counterArea}>
-                <View style={styles.sushiPlate}>
-                    <Text style={styles.kanjiText}>{targetWord.kanji}</Text>
-                    <Text style={styles.kanaText}>{targetWord.kana}</Text>
+                {/* 寿司カウンター演出 */}
+                <View style={styles.counterArea}>
+                    <View style={styles.sushiPlate}>
+                        <Text style={styles.kanjiText}>{targetWord.kanji}</Text>
+                        <Text style={styles.kanaText}>{targetWord.kana}</Text>
 
-                    <View style={styles.romajiContainer}>
-                        {targetRomaji.split('').map((char, i) => (
-                            <Text
-                                key={i}
-                                style={[
-                                    styles.romajiChar,
-                                    i < currentIndex ? styles.typedChar : styles.untypedChar
-                                ]}
-                            >
-                                {char}
-                            </Text>
-                        ))}
+                        <View style={styles.romajiContainer}>
+                            {targetRomaji.split('').map((char, i) => (
+                                <Text
+                                    key={i}
+                                    style={[
+                                        styles.romajiChar,
+                                        i < currentIndex ? styles.typedChar : styles.untypedChar
+                                    ]}
+                                >
+                                    {char}
+                                </Text>
+                            ))}
+                        </View>
                     </View>
                 </View>
-            </View>
 
-            {/* 見えないTextInputでキー入力を受け取る（iPad物理キーボード等を想定） */}
-            <TextInput
-                autoFocus
-                style={styles.hiddenInput}
-                onChangeText={(text) => {
-                    const char = text.slice(-1);
-                    if (char) handleKeyPress(char);
-                }}
-                value=""
-                autoCapitalize="none"
-                autoCorrect={false}
-            />
-        </View>
+                {/* 見えないTextInputでキー入力を受け取る */}
+                <TextInput
+                    ref={inputRef}
+                    autoFocus
+                    style={styles.hiddenInput}
+                    onChangeText={(text) => {
+                        // 1文字ずつ処理。全角入力などが混ざっても最後の1文字を判定に使用
+                        if (text.length > 0) {
+                            const lastChar = text.charAt(text.length - 1);
+                            handleKeyPress(lastChar);
+                        }
+                    }}
+                    value=""
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    spellCheck={false}
+                    keyboardType="ascii-capable"
+                    blurOnSubmit={false}
+                />
+            </KeyboardAvoidingView>
+        </TouchableWithoutFeedback>
     );
 };
 
@@ -91,7 +116,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
-        marginBottom: 100,
+        marginBottom: 80,
     },
     timer: {
         fontSize: 32,
@@ -144,10 +169,14 @@ const styles = StyleSheet.create({
     },
     hiddenInput: {
         position: 'absolute',
-        width: 1,
-        height: 1,
+        bottom: 0,
+        left: 0,
+        width: 10, // 完全に0だとフォーカス外れる場合があるため最小限に
+        height: 10,
         opacity: 0,
     },
 });
+
+export default GameScreen;
 
 export default GameScreen;
