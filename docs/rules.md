@@ -13,9 +13,8 @@
 - **docs/pages/**: 各画面の詳細仕様はここに集約する。
 
 ## 3. Git / GitHub 運用
-- **コミットメッセージ**: `feat:`, `fix:`, `docs:`, `config:` などのプレフィックスを用いる（Conventional Commits）。
+- **即時Push禁止**: リモートリポジトリ（GitHub）へのPushは、ユーザーの明示的な許可がある場合のみ行う。エラーがある状態での小まめなPushは避ける。
 - **ユーザー情報**: `shikiuku@gmail.com` / `shikiuku` を使用する。
-- **即時Push**: 重要な変更が完了した後は、リモートリポジトリへPushする。
 
 ## 4. プロジェクト特有のルール
 - **iPad ランドスケープ固定**: iPadの横向き画面に特化したUI/UXを設計する。
