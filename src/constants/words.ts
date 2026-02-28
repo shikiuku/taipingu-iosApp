@@ -1,19 +1,28 @@
-export type Word = {
+export interface Word {
     kanji: string;
     kana: string;
-    romaji: string[]; // 複数の入力パターンを許容するため
-};
+    romaji: string[];
+}
 
 export const WORD_LIST_3000: Word[] = [
-    { kanji: 'お茶', kana: 'おちゃ', romaji: ['ocha'] },
-    { kanji: '寿司', kana: 'すし', romaji: ['sushi'] },
     { kanji: 'マグロ', kana: 'まぐろ', romaji: ['maguro'] },
-    { kanji: 'たまご', kana: 'たまご', romaji: ['tamago'] },
-    { kanji: 'のりまき', kana: 'のりまき', romaji: ['norimaki'] },
+    { kanji: 'サーモン', kana: 'さーもん', romaji: ['sa-mon'] },
+    { kanji: 'エビ', kana: 'えび', romaji: ['ebi'] },
+    { kanji: 'イカ', kana: 'いか', romaji: ['ika'] },
+    { kanji: '玉子', kana: 'たまご', romaji: ['tamago'] },
+    { kanji: 'イクラ', kana: 'いくら', romaji: ['ikura'] },
+    { kanji: 'タコ', kana: 'たこ', romaji: ['tako'] },
+    { kanji: 'ウニ', kana: 'うに', romaji: ['uni'] },
 ];
 
 export const WORD_LIST_5000: Word[] = [
-    { kanji: '江戸前寿司', kana: 'えどまえずし', romaji: ['edomaezushi'] },
-    { kanji: '回転寿司', kana: 'かいてんずし', romaji: ['kaitenzushi'] },
-    { kanji: '本日のおすすめ', kana: 'ほんじつのおすすめ', romaji: ['honjitsunoosusume'] },
+    ...WORD_LIST_3000,
+    { kanji: '中トロ', kana: 'ちゅうとろ', romaji: ['tyuutoro', 'chuutoro'] },
+    { kanji: 'いくら軍艦', kana: 'いくらぐんかん', romaji: ['ikuragunkan'] },
+];
+
+export const WORD_LIST_10000: Word[] = [
+    ...WORD_LIST_5000,
+    { kanji: '特上穴子', kana: 'とくじょうあなご', romaji: ['tokujouanago'] },
+    { kanji: '大トロ炙り', kana: 'おおとろあぶり', romaji: ['ootoroaburi'] },
 ];

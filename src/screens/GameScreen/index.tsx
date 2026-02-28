@@ -1,21 +1,30 @@
 import { COLORS } from '@/constants/theme';
-import { WORD_LIST_3000, Word } from '@/constants/words';
+import { WORD_LIST_10000, WORD_LIST_3000, WORD_LIST_5000, Word } from '@/constants/words';
 import { useGameStore } from '@/store/useGameStore';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
 import { useTypingLogic } from './hooks/useTypingLogic';
 
 const GameScreen = () => {
     const router = useRouter();
-    const { score, timeRemaining, currentCourse, addScore, decrementTime, status } = useGameStore();
-    const [targetWord, setTargetWord] = useState<Word>(WORD_LIST_3000[0]);
+    const { score, timeRemaining, currentCourse, addScore, decrementTime, status, resetGame } = useGameStore();
+
+    // 現在のコースに応じた単語セットを取得
+    const getWordList = () => {
+        if (!currentCourse) return WORD_LIST_3000;
+        if (currentCourse.price === 10000) return WORD_LIST_10000;
+        if (currentCourse.price === 5000) return WORD_LIST_5000;
+        return WORD_LIST_3000;
+    };
+
+    const words = getWordList();
+    const [targetWord, setTargetWord] = useState<Word>(words[Math.floor(Math.random() * words.length)]);
     const inputRef = useRef<TextInput>(null);
 
     const onComplete = () => {
-        addScore(100);
-        // 次の単語を選ぶ（ランダム）
-        const nextWord = WORD_LIST_3000[Math.floor(Math.random() * WORD_LIST_3000.length)];
+        addScore(targetWord.kanji.length * 10);
+        const nextWord = words[Math.floor(Math.random() * words.length)];
         setTargetWord(nextWord);
     };
 
@@ -48,21 +57,9 @@ const GameScreen = () => {
         inputRef.current?.focus();
     };
 
-    const handlePressScreen = () => {
-        inputRef.current?.focus();
-    };
-
     const handleExit = () => {
         resetGame();
         router.replace('/');
-    };
-
-    // 現在のコースに応じた単語セットを取得
-    const getWordList = () => {
-        if (!currentCourse) return WORD_LIST_3000;
-        if (currentCourse.price === 10000) return WORD_LIST_10000;
-        if (currentCourse.price === 5000) return WORD_LIST_5000;
-        return WORD_LIST_3000;
     };
 
     return (
