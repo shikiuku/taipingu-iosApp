@@ -1,8 +1,10 @@
 import { COLORS } from '@/constants/theme';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const TitleScreen = ({ navigation }: any) => {
+const TitleScreen = () => {
+    const router = useRouter();
     return (
         <View style={styles.container}>
             <Text style={styles.logo}>打（タイピング）</Text>
@@ -10,7 +12,7 @@ const TitleScreen = ({ navigation }: any) => {
 
             <TouchableOpacity
                 style={styles.startButton}
-                onPress={() => navigation.navigate('CourseSelect')}
+                onPress={() => router.push('/CourseSelect')}
             >
                 <Text style={styles.buttonText}>スタート</Text>
             </TouchableOpacity>

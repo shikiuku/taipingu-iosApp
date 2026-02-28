@@ -1,14 +1,16 @@
 import { COLORS } from '@/constants/theme';
 import { useGameStore } from '@/store/useGameStore';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const ResultScreen = ({ navigation }: any) => {
+const ResultScreen = () => {
+    const router = useRouter();
     const { score, currentCourse, resetGame } = useGameStore();
 
     const handleFinish = () => {
         resetGame();
-        navigation.navigate('Title');
+        router.replace('/');
     };
 
     const profitability = score - (currentCourse?.price || 0);
