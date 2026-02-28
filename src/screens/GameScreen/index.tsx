@@ -178,5 +178,3 @@ const styles = StyleSheet.create({
 });
 
 export default GameScreen;
-
-export default GameScreen;
