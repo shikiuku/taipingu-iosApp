@@ -48,61 +48,88 @@ const GameScreen = () => {
         inputRef.current?.focus();
     };
 
+    const handlePressScreen = () => {
+        inputRef.current?.focus();
+    };
+
+    const handleExit = () => {
+        resetGame();
+        router.replace('/');
+    };
+
+    // 現在のコースに応じた単語セットを取得
+    const getWordList = () => {
+        if (!currentCourse) return WORD_LIST_3000;
+        if (currentCourse.price === 10000) return WORD_LIST_10000;
+        if (currentCourse.price === 5000) return WORD_LIST_5000;
+        return WORD_LIST_3000;
+    };
+
     return (
-        <TouchableWithoutFeedback onPress={handlePressScreen}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.container}
-            >
-                {/* ヘッダー情報 */}
-                <View style={styles.header}>
-                    <Text style={styles.timer}>残り {String(timeRemaining).padStart(3, '0')} 秒</Text>
-                    <Text style={styles.score}>獲得金額: {score.toLocaleString()} 円</Text>
-                </View>
+        <View style={{ flex: 1 }}>
+            <TouchableWithoutFeedback onPress={handlePressScreen}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.container}
+                >
+                    {/* ヘッダー情報 */}
+                    <View style={styles.header}>
+                        <View>
+                            <Text style={styles.timer}>残り {String(timeRemaining).padStart(3, '0')} 秒</Text>
+                            <Text style={styles.courseName}>{currentCourse?.name}</Text>
+                        </View>
 
-                {/* 寿司カウンター演出 */}
-                <View style={styles.counterArea}>
-                    <View style={styles.sushiPlate}>
-                        <Text style={styles.kanjiText}>{targetWord.kanji}</Text>
-                        <Text style={styles.kanaText}>{targetWord.kana}</Text>
-
-                        <View style={styles.romajiContainer}>
-                            {targetRomaji.split('').map((char, i) => (
-                                <Text
-                                    key={i}
-                                    style={[
-                                        styles.romajiChar,
-                                        i < currentIndex ? styles.typedChar : styles.untypedChar
-                                    ]}
-                                >
-                                    {char}
-                                </Text>
-                            ))}
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={styles.score}>獲得金額: {score.toLocaleString()} 円</Text>
+                            <TouchableOpacity style={styles.exitButton} onPress={handleExit}>
+                                <Text style={styles.exitButtonText}>中断して戻る</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
-                </View>
 
-                {/* 見えないTextInputでキー入力を受け取る */}
-                <TextInput
-                    ref={inputRef}
-                    autoFocus
-                    style={styles.hiddenInput}
-                    onChangeText={(text) => {
-                        // 1文字ずつ処理。全角入力などが混ざっても最後の1文字を判定に使用
-                        if (text.length > 0) {
-                            const lastChar = text.charAt(text.length - 1);
-                            handleKeyPress(lastChar);
-                        }
-                    }}
-                    value=""
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    spellCheck={false}
-                    keyboardType="ascii-capable"
-                    blurOnSubmit={false}
-                />
-            </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
+                    {/* 寿司カウンター演出 */}
+                    <View style={styles.counterArea}>
+                        <View style={styles.sushiPlate}>
+                            <Text style={styles.kanjiText}>{targetWord.kanji}</Text>
+                            <Text style={styles.kanaText}>{targetWord.kana}</Text>
+
+                            <View style={styles.romajiContainer}>
+                                {targetRomaji.split('').map((char, i) => (
+                                    <Text
+                                        key={i}
+                                        style={[
+                                            styles.romajiChar,
+                                            i < currentIndex ? styles.typedChar : styles.untypedChar
+                                        ]}
+                                    >
+                                        {char}
+                                    </Text>
+                                ))}
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* 見えないTextInputでキー入力を受け取る */}
+                    <TextInput
+                        ref={inputRef}
+                        autoFocus
+                        style={styles.hiddenInput}
+                        onChangeText={(text) => {
+                            if (text.length > 0) {
+                                const lastChar = text.charAt(text.length - 1);
+                                handleKeyPress(lastChar);
+                            }
+                        }}
+                        value=""
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        spellCheck={false}
+                        keyboardType="ascii-capable"
+                        blurOnSubmit={false}
+                    />
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
+        </View>
     );
 };
 
@@ -116,17 +143,35 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
-        marginBottom: 80,
+        marginBottom: 40,
     },
     timer: {
         fontSize: 32,
         color: '#FFF',
         fontWeight: 'bold',
     },
+    courseName: {
+        fontSize: 18,
+        color: COLORS.WOOD_LIGHT,
+        marginTop: 5,
+    },
     score: {
         fontSize: 32,
         color: COLORS.TEXT_GOLD,
         fontWeight: 'bold',
+    },
+    exitButton: {
+        marginTop: 15,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 5,
+        borderWidth: 1,
+        borderColor: COLORS.WOOD_LIGHT,
+    },
+    exitButtonText: {
+        color: '#FFF',
+        fontSize: 16,
     },
     counterArea: {
         flex: 1,
@@ -171,7 +216,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 0,
         left: 0,
-        width: 10, // 完全に0だとフォーカス外れる場合があるため最小限に
+        width: 10,
         height: 10,
         opacity: 0,
     },
