@@ -23,7 +23,7 @@ const GameScreen = () => {
     const inputRef = useRef<TextInput>(null);
 
     const onComplete = () => {
-        addScore(targetWord.kanji.length * 10);
+        addScore(100); // 1単語100円
         const nextWord = words[Math.floor(Math.random() * words.length)];
         setTargetWord(nextWord);
     };
@@ -41,7 +41,7 @@ const GameScreen = () => {
     // 終了判定
     useEffect(() => {
         if (status === 'result') {
-            router.push('/Result');
+            router.replace('/Result');
         }
     }, [status]);
 

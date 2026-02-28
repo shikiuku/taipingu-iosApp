@@ -1,21 +1,42 @@
-import CourseSelect from '@/screens/CourseSelect';
-import GameScreen from '@/screens/GameScreen';
-import ResultScreen from '@/screens/Result';
-import TitleScreen from '@/screens/TitleScreen';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-const Stack = createNativeStackNavigator();
+import { Stack } from 'expo-router';
+import React from 'react';
 
 export default function RootLayout() {
   return (
-    <Stack.Navigator
-      initialRouteName="Title"
-      screenOptions={{ headerShown: false, orientation: 'landscape' }}
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#000' },
+      }}
     >
-      <Stack.Screen name="Title" component={TitleScreen} />
-      <Stack.Screen name="CourseSelect" component={CourseSelect} />
-      <Stack.Screen name="GameScreen" component={GameScreen} />
-      <Stack.Screen name="Result" component={ResultScreen} />
-    </Stack.Navigator>
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Title',
+          orientation: 'landscape'
+        }}
+      />
+      <Stack.Screen
+        name="CourseSelect"
+        options={{
+          title: 'Course Select',
+          orientation: 'landscape'
+        }}
+      />
+      <Stack.Screen
+        name="GameScreen"
+        options={{
+          title: 'Game',
+          orientation: 'landscape'
+        }}
+      />
+      <Stack.Screen
+        name="Result"
+        options={{
+          title: 'Result',
+          orientation: 'landscape'
+        }}
+      />
+    </Stack>
   );
 }
