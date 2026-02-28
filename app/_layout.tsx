@@ -1,24 +1,21 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import CourseSelect from '@/screens/CourseSelect';
+import GameScreen from '@/screens/GameScreen';
+import ResultScreen from '@/screens/Result';
+import TitleScreen from '@/screens/TitleScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+const Stack = createNativeStackNavigator();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <Stack.Navigator
+      initialRouteName="Title"
+      screenOptions={{ headerShown: false, orientation: 'landscape' }}
+    >
+      <Stack.Screen name="Title" component={TitleScreen} />
+      <Stack.Screen name="CourseSelect" component={CourseSelect} />
+      <Stack.Screen name="GameScreen" component={GameScreen} />
+      <Stack.Screen name="Result" component={ResultScreen} />
+    </Stack.Navigator>
   );
 }
