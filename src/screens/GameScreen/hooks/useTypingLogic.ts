@@ -1,5 +1,5 @@
+import { Word } from '@/constants/words';
 import { useCallback, useEffect, useState } from 'react';
-import { Word } from '../../../constants/words';
 
 export const useTypingLogic = (targetWord: Word | null, onComplete: () => void) => {
     const [userInput, setUserInput] = useState('');
