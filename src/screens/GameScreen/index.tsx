@@ -1,55 +1,134 @@
-import { COLORS } from '@/constants/theme';
+import { AppColors } from '@/constants/theme';
 import { WORD_LIST_10000, WORD_LIST_3000, WORD_LIST_5000, Word } from '@/constants/words';
 import { useGameStore } from '@/store/useGameStore';
+import { Audio } from 'expo-av';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { GameHeader } from './components/GameHeader';
+import { SushiDisplay } from './components/SushiDisplay';
 import { useTypingLogic } from './hooks/useTypingLogic';
 
 const GameScreen = () => {
     const router = useRouter();
-    const { score, timeRemaining, currentCourse, addScore, decrementTime, status, resetGame } = useGameStore();
+    const {
+        score,
+        timeRemaining,
+        currentCourse,
+        addScore,
+        decrementTime,
+        status,
+        resetGame
+    } = useGameStore();
 
-    // 現在のコースに応じた単語セットを取得
-    const getWordList = () => {
+    const [completeSound, setCompleteSound] = useState<Audio.Sound | null>(null);
+    const [cancelSound, setCancelSound] = useState<Audio.Sound | null>(null);
+    const soundRef = useRef<Audio.Sound | null>(null);
+    const cancelSoundRef = useRef<Audio.Sound | null>(null);
+    const inputRef = useRef<TextInput>(null);
+
+    // 効果音の読み込み
+    useEffect(() => {
+        let isMounted = true;
+        const loadSounds = async () => {
+            try {
+                // 完了音
+                const { sound: complete } = await Audio.Sound.createAsync(
+                    require('../../../assets/sounds/word_complete.mp3')
+                );
+                // 戻る音
+                const { sound: cancel } = await Audio.Sound.createAsync(
+                    require('../../../assets/sounds/cancel.mp3')
+                );
+
+                if (isMounted) {
+                    setCompleteSound(complete);
+                    soundRef.current = complete;
+                    setCancelSound(cancel);
+                    cancelSoundRef.current = cancel;
+                } else {
+                    complete.unloadAsync();
+                    cancel.unloadAsync();
+                }
+            } catch (error) {
+                console.log('Failed to load sounds', error);
+            }
+        };
+
+        loadSounds();
+
+        return () => {
+            isMounted = false;
+            if (soundRef.current) soundRef.current.unloadAsync();
+            if (cancelSoundRef.current) cancelSoundRef.current.unloadAsync();
+        };
+    }, []);
+
+    const words = (() => {
         if (!currentCourse) return WORD_LIST_3000;
         if (currentCourse.price === 10000) return WORD_LIST_10000;
         if (currentCourse.price === 5000) return WORD_LIST_5000;
         return WORD_LIST_3000;
-    };
+    })();
 
-    const words = getWordList();
-    const [targetWord, setTargetWord] = useState<Word>(words[Math.floor(Math.random() * words.length)]);
-    const inputRef = useRef<TextInput>(null);
+    const [targetWord, setTargetWord] = useState<Word>(
+        words[Math.floor(Math.random() * words.length)]
+    );
 
-    const onComplete = () => {
-        addScore(100); // 1単語100円
+    // タイピング完了時の処理
+    const onComplete = useCallback(() => {
+        // 音声を最優先で（非同期で）再生
+        if (completeSound) {
+            completeSound.stopAsync().then(() => {
+                completeSound.playAsync();
+            }).catch(err => console.log('Replay error', err));
+        }
+
+        let amount = 100;
+        if (currentCourse?.price === 10000) {
+            amount = 500;
+        } else if (currentCourse?.price === 5000) {
+            amount = 300;
+        } else if (currentCourse?.price === 3000) {
+            amount = 100;
+        }
+
+        addScore(amount);
         const nextWord = words[Math.floor(Math.random() * words.length)];
         setTargetWord(nextWord);
-    };
+    }, [currentCourse, words, addScore, completeSound]);
 
     const { targetRomaji, currentIndex, handleKeyPress } = useTypingLogic(targetWord, onComplete);
 
-    // タイマー開始
+    // タイマー管理
     useEffect(() => {
         const interval = setInterval(() => {
             decrementTime();
         }, 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [decrementTime]);
 
-    // 終了判定
+    // リザルト画面への遷移
     useEffect(() => {
         if (status === 'result') {
             router.replace('/Result');
         }
-    }, [status]);
+    }, [status, router]);
 
-    // 常にフォーカスを維持
+    // 自動フォーカス（ゲーム開始時）
     useEffect(() => {
         const timer = setTimeout(() => {
             inputRef.current?.focus();
-        }, 500);
+        }, 100); // タイムアウトを短縮して違和感を軽減
         return () => clearTimeout(timer);
     }, []);
 
@@ -58,164 +137,96 @@ const GameScreen = () => {
     };
 
     const handleExit = () => {
+        if (cancelSound) {
+            cancelSound.stopAsync().then(() => {
+                cancelSound.playAsync();
+            });
+        }
         resetGame();
-        router.replace('/');
+        router.navigate('/');
     };
 
     return (
-        <View style={{ flex: 1 }}>
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar hidden />
             <TouchableWithoutFeedback onPress={handlePressScreen}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.container}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
                 >
-                    {/* ヘッダー情報 */}
-                    <View style={styles.header}>
-                        <View>
-                            <Text style={styles.timer}>残り {String(timeRemaining).padStart(3, '0')} 秒</Text>
-                            <Text style={styles.courseName}>{currentCourse?.name}</Text>
-                        </View>
-
-                        <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={styles.score}>獲得金額: {score.toLocaleString()} 円</Text>
-                            <TouchableOpacity style={styles.exitButton} onPress={handleExit}>
-                                <Text style={styles.exitButtonText}>中断して戻る</Text>
-                            </TouchableOpacity>
-                        </View>
+                    {/* ヘッダーエリア */}
+                    <View style={styles.headerContainer}>
+                        <GameHeader
+                            timeRemaining={timeRemaining}
+                            score={score}
+                            courseName={currentCourse?.name}
+                            onExit={handleExit}
+                        />
                     </View>
 
-                    {/* 寿司カウンター演出 */}
-                    <View style={styles.counterArea}>
-                        <View style={styles.sushiPlate}>
-                            <Text style={styles.kanjiText}>{targetWord.kanji}</Text>
-                            <Text style={styles.kanaText}>{targetWord.kana}</Text>
-
-                            <View style={styles.romajiContainer}>
-                                {targetRomaji.split('').map((char, i) => (
-                                    <Text
-                                        key={i}
-                                        style={[
-                                            styles.romajiChar,
-                                            i < currentIndex ? styles.typedChar : styles.untypedChar
-                                        ]}
-                                    >
-                                        {char}
-                                    </Text>
-                                ))}
-                            </View>
-                        </View>
+                    {/* メインコンテンツ（センター配置） */}
+                    <View style={styles.contentArea}>
+                        <SushiDisplay
+                            targetWord={targetWord}
+                            targetRomaji={targetRomaji}
+                            currentIndex={currentIndex}
+                        />
                     </View>
 
-                    {/* 見えないTextInputでキー入力を受け取る */}
+                    {/* 固定のボトムスペーサー（レイアウトを安定させるため、出し入れしない） */}
+                    <View style={styles.bottomSpacer} />
+
                     <TextInput
                         ref={inputRef}
-                        autoFocus
                         style={styles.hiddenInput}
                         onChangeText={(text) => {
                             if (text.length > 0) {
-                                const lastChar = text.charAt(text.length - 1);
-                                handleKeyPress(lastChar);
+                                for (let i = 0; i < text.length; i++) {
+                                    handleKeyPress(text.charAt(i));
+                                }
                             }
                         }}
                         value=""
                         autoCapitalize="none"
                         autoCorrect={false}
                         spellCheck={false}
-                        keyboardType="ascii-capable"
+                        keyboardType="default"
                         blurOnSubmit={false}
                     />
                 </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: AppColors.base.dark,
+    },
     container: {
         flex: 1,
-        backgroundColor: COLORS.WOOD_DARK,
-        padding: 40,
+        paddingHorizontal: 40,
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: '100%',
-        marginBottom: 40,
+    headerContainer: {
+        paddingTop: 20,
     },
-    timer: {
-        fontSize: 32,
-        color: '#FFF',
-        fontWeight: 'bold',
-    },
-    courseName: {
-        fontSize: 18,
-        color: COLORS.WOOD_LIGHT,
-        marginTop: 5,
-    },
-    score: {
-        fontSize: 32,
-        color: COLORS.TEXT_GOLD,
-        fontWeight: 'bold',
-    },
-    exitButton: {
-        marginTop: 15,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        paddingHorizontal: 15,
-        paddingVertical: 8,
-        borderRadius: 5,
-        borderWidth: 1,
-        borderColor: COLORS.WOOD_LIGHT,
-    },
-    exitButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-    },
-    counterArea: {
+    contentArea: {
         flex: 1,
-        alignItems: 'center',
         justifyContent: 'center',
-    },
-    sushiPlate: {
-        width: 600,
-        height: 250,
-        backgroundColor: '#FFF',
-        borderRadius: 125,
         alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 8,
-        borderColor: COLORS.WOOD_MEDIUM,
     },
-    kanjiText: {
-        fontSize: 64,
-        fontWeight: 'bold',
-        color: COLORS.TEXT_MAIN,
-    },
-    kanaText: {
-        fontSize: 24,
-        color: '#666',
-        marginBottom: 20,
-    },
-    romajiContainer: {
-        flexDirection: 'row',
-    },
-    romajiChar: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        textTransform: 'lowercase',
-    },
-    typedChar: {
-        color: '#DDD',
-    },
-    untypedChar: {
-        color: COLORS.TEXT_MAIN,
+    bottomSpacer: {
+        height: 80, // 固定値にしてガタつきを防止
     },
     hiddenInput: {
         position: 'absolute',
-        bottom: 0,
+        top: 0,
         left: 0,
         width: 10,
         height: 10,
-        opacity: 0,
+        opacity: 0.01,
     },
 });
 

@@ -1,15 +1,16 @@
 {
   "expo": {
-    "name": "taipingu-iosApp",
+    "name": "打 タイピング",
     "slug": "taipingu-iosApp",
     "version": "1.0.0",
     "orientation": "landscape",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/icon.jpg",
     "scheme": "taipinguiosapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.k4849.taipingu"
     },
     "android": {
       "adaptiveIcon": {

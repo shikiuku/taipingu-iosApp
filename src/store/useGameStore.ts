@@ -38,12 +38,19 @@ export const useGameStore = create<GameState>((set) => ({
         score: 0
     }),
 
-    addScore: (points) => set((state) => ({ score: state.score + points })),
+    addScore: (points) => set((state) => {
+        if (state.status !== 'playing') return state;
+        return { score: state.score + points };
+    }),
 
-    decrementTime: () => set((state) => ({
-        timeRemaining: Math.max(0, state.timeRemaining - 1),
-        status: state.timeRemaining <= 1 ? 'result' : state.status
-    })),
+    decrementTime: () => set((state) => {
+        if (state.status !== 'playing') return state;
+        const nextTime = Math.max(0, state.timeRemaining - 1);
+        return {
+            timeRemaining: nextTime,
+            status: nextTime === 0 ? 'result' : state.status
+        };
+    }),
 
     resetGame: () => set({
         status: 'title',
